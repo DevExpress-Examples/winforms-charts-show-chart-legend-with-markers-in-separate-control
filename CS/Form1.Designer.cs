@@ -146,6 +146,8 @@ namespace LegendMarkers {
             this.chart.Size = new System.Drawing.Size(1060, 554);
             this.chart.TabIndex = 0;
             this.chart.ObjectSelected += new DevExpress.XtraCharts.HotTrackEventHandler(this.chart_ObjectSelected);
+            this.chart.CustomDrawSeries += new DevExpress.XtraCharts.CustomDrawSeriesEventHandler(this.chart_CustomDrawSeries);
+            this.chart.CustomDrawSeriesPoint += new DevExpress.XtraCharts.CustomDrawSeriesPointEventHandler(this.chart_CustomDrawSeriesPoint);
             // 
             // gridControl1
             // 
@@ -173,13 +175,12 @@ namespace LegendMarkers {
             this.gridView1.Name = "gridView1";
             this.gridView1.OptionsEditForm.PopupEditFormWidth = 1600;
             this.gridView1.FocusedRowChanged += new DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventHandler(this.gridView1_FocusedRowChanged);
-            this.gridView1.CustomUnboundColumnData += new DevExpress.XtraGrid.Views.Base.CustomColumnDataEventHandler(this.gridView1_CustomUnboundColumnData);
+            this.gridView1.CustomDrawCell += new DevExpress.XtraGrid.Views.Base.RowCellCustomDrawEventHandler(this.gridView1_CustomDrawCell);
             // 
             // colImage
             // 
-            this.colImage.Caption = "Image";
-            this.colImage.ColumnEdit = this.repositoryItemPictureEdit1;
-            this.colImage.FieldName = "Image";
+            this.colImage.Caption = "Marker";
+            this.colImage.FieldName = "Marker";
             this.colImage.MinWidth = 40;
             this.colImage.Name = "colImage";
             this.colImage.OptionsColumn.AllowEdit = false;

@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using DevExpress.Utils.Drawing;
 using DevExpress.XtraCharts;
-using System.Collections;
+using DevExpress.XtraGrid.Views.Base;
 
 namespace LegendMarkers
 {
@@ -11,78 +13,93 @@ namespace LegendMarkers
         {
             InitializeComponent();
         }
-        Hashtable legendMarkersTable = new Hashtable();
+        // Actual draw settings the chart used for each series and series point during the last paint.
+        readonly Dictionary<Series, DrawOptions> seriesDrawOptions = new Dictionary<Series, DrawOptions>();
+        readonly Dictionary<SeriesPoint, Color> pointColors = new Dictionary<SeriesPoint, Color>();
+
         void frmMain_Load(object sender, System.EventArgs e)
         {
-            CreateLegendMarkers(chart);
             gridControl1.DataSource = chart.Series;
         }
 
-        void CreateLegendMarkers(ChartControl sourceChart)
+        void chart_CustomDrawSeries(object sender, CustomDrawSeriesEventArgs e)
         {
-            using (ChartControl fakeChart = (ChartControl)sourceChart.Clone())
-            {
-                fakeChart.Legend.Visibility = DevExpress.Utils.DefaultBoolean.True;
-                fakeChart.BorderOptions.Visibility = DevExpress.Utils.DefaultBoolean.False;
-                fakeChart.Padding.All = 0;
-                fakeChart.BackColor = Color.Transparent;
-                fakeChart.Legend.Border.Visibility = DevExpress.Utils.DefaultBoolean.False;
-                fakeChart.Legend.Margins.All = 0;
-                fakeChart.Legend.Padding.All = 0;
-                fakeChart.Legend.TextVisible = false;
-                fakeChart.Legend.BackColor = Color.Transparent;
-                fakeChart.Legend.VerticalIndent = 0;
-                foreach (Series series in chart.Series)
-                {
-                    Bitmap bitmap = GetMarkerImage(fakeChart, series);
-                    legendMarkersTable.Add(series, bitmap);
-                }
-            }
-        }
-        Bitmap GetMarkerImage(ChartControl chart, Series series)
-        {
-            Bitmap bitmap = null;
-            Series currentSeries = null;
-            foreach (Series fakeSeries in chart.Series)
-            {
-                if (fakeSeries.Name == series.Name)
-                {
-                    currentSeries = fakeSeries;
-                    fakeSeries.ShowInLegend = true;
-                }
-                else
-                    fakeSeries.ShowInLegend = false;
-            }
-            if (currentSeries != null)
-            {
-                XYDiagram2D diagram = chart.Diagram as XYDiagram2D;
-                if (diagram != null)
-                    diagram.DefaultPane.Visibility = ChartElementVisibility.Hidden;
-                SeriesViewColorEachSupportBase colorEachView = currentSeries.View as SeriesViewColorEachSupportBase;
-                if (colorEachView != null && colorEachView.ColorEach)
-                    chart.Size = new Size(chart.Legend.MarkerSize.Width, chart.Legend.MarkerSize.Height * currentSeries.Points.Count);
-                else
-                    chart.Size = chart.Legend.MarkerSize;
-                bitmap = new Bitmap(chart.Size.Width, chart.Size.Height);
-                chart.DrawToBitmap(bitmap, new Rectangle(Point.Empty, bitmap.Size));
-            }
-            return bitmap;
+            DrawOptions options;
+            if (seriesDrawOptions.TryGetValue(e.Series, out options) && options.Color == e.SeriesDrawOptions.Color)
+                return;
+            seriesDrawOptions[e.Series] = (DrawOptions)e.SeriesDrawOptions.Clone();
+            gridControl1.Invalidate();
         }
 
+        void chart_CustomDrawSeriesPoint(object sender, CustomDrawSeriesPointEventArgs e)
+        {
+            Color color;
+            if (pointColors.TryGetValue(e.SeriesPoint, out color) && color == e.SeriesDrawOptions.Color)
+                return;
+            pointColors[e.SeriesPoint] = e.SeriesDrawOptions.Color;
+            gridControl1.Invalidate();
+        }
+
+        void gridView1_CustomDrawCell(object sender, RowCellCustomDrawEventArgs e)
+        {
+            if (e.Column != colImage)
+                return;
+            Series series = gridView1.GetRow(e.RowHandle) as Series;
+            DrawOptions options;
+            if (series == null || !seriesDrawOptions.TryGetValue(series, out options))
+                return;
+            e.DefaultDraw();
+            Size markerSize = chart.Legend.MarkerSize;
+            Rectangle markerBounds = new Rectangle(
+                e.Bounds.Left + (e.Bounds.Width - markerSize.Width) / 2,
+                e.Bounds.Top + (e.Bounds.Height - markerSize.Height) / 2,
+                markerSize.Width, markerSize.Height);
+            DrawLegendMarker(e.Cache, markerBounds, options, GetMarkerColors(series, options));
+            e.Handled = true;
+        }
+
+        List<Color> GetMarkerColors(Series series, DrawOptions options)
+        {
+            List<Color> colors = new List<Color>();
+            SeriesViewColorEachSupportBase colorEachView = series.View as SeriesViewColorEachSupportBase;
+            if (colorEachView != null && colorEachView.ColorEach)
+            {
+                foreach (SeriesPoint point in series.Points)
+                {
+                    Color color;
+                    if (pointColors.TryGetValue(point, out color))
+                        colors.Add(color);
+                }
+            }
+            if (colors.Count == 0)
+                colors.Add(options.Color);
+            return colors;
+        }
+
+        static void DrawLegendMarker(GraphicsCache cache, Rectangle bounds, DrawOptions options, List<Color> colors)
+        {
+            LineDrawOptions lineOptions = options as LineDrawOptions;
+            if (lineOptions != null && !(options is AreaDrawOptions))
+            {
+                int thickness = System.Math.Max(1, lineOptions.LineStyle.Thickness);
+                int y = bounds.Top + bounds.Height / 2;
+                cache.DrawLine(cache.GetPen(colors[0], thickness), new Point(bounds.Left, y), new Point(bounds.Right, y));
+                return;
+            }
+            // Split the marker into vertical stripes when the series colors each point individually.
+            for (int i = 0; i < colors.Count; i++)
+            {
+                int left = bounds.Left + bounds.Width * i / colors.Count;
+                int right = bounds.Left + bounds.Width * (i + 1) / colors.Count;
+                cache.FillRectangle(colors[i], new Rectangle(left, bounds.Top, right - left, bounds.Height));
+            }
+        }
 
         private void chart_ObjectSelected(object sender, HotTrackEventArgs e)
         {
             if (e.HitInfo.InSeries)
             {
                 gridView1.FocusedRowHandle = gridView1.GetRowHandle(chart.Series.IndexOf(((Series)e.Object)));
-            }
-        }
-
-        private void gridView1_CustomUnboundColumnData(object sender, DevExpress.XtraGrid.Views.Base.CustomColumnDataEventArgs e)
-        {
-            if (e.IsGetData && e.Column == colImage)
-            {
-                e.Value = legendMarkersTable[((Series)e.Row)];
             }
         }
 
