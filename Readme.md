@@ -15,15 +15,13 @@ This example uses a grid as a legend for the Chart control. The grid displays ch
 
 ### Legend Markers
 
-The [ChartControl.CustomDrawSeries](https://docs.devexpress.com/WindowsForms/DevExpress.XtraCharts.ChartControl.CustomDrawSeries) event handler extracts the color used to draw legend markers to the `pointColors` dictionary.
+The [ChartControl.CustomDrawSeries](https://docs.devexpress.com/WindowsForms/DevExpress.XtraCharts.ChartControl.CustomDrawSeries) event handler extracts legend marker colors to the `pointColors` dictionary:
 
 ```csharp
 pointColors[e.SeriesPoint] = e.SeriesDrawOptions.Color;
 ```
 
-The [GridView.CustomDrawCell](https://docs.devexpress.com/WindowsForms/DevExpress.XtraGrid.Views.Grid.GridView.CustomDrawCell) event handler calls `GetMarkerColors` and `DrawLegendMarker` methods to draw series indicators in the Data Grid.
-
-The `CreateLegendMarkers` method creates legend marker images by temporarily cloning the `ChartControl`. It stores the generated markers in the `legendMarkersTable` hashtable.
+The [GridView.CustomDrawCell](https://docs.devexpress.com/WindowsForms/DevExpress.XtraGrid.Views.Grid.GridView.CustomDrawCell) event handler calls `GetMarkerColors` and `DrawLegendMarker` methods to custom draw series indicators in the Data Grid.
 
 ### Bind the Grid to Chart Series
 
