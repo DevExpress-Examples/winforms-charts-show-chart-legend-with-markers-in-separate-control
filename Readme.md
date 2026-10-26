@@ -13,7 +13,7 @@ This example uses a grid as a legend for the Chart control. The grid displays ch
 
 ## Implementation Details
 
-### Legend Markers
+### Create Series Indicators
 
 The [ChartControl.CustomDrawSeries](https://docs.devexpress.com/WindowsForms/DevExpress.XtraCharts.ChartControl.CustomDrawSeries) event handler extracts legend marker colors to the `pointColors` dictionary:
 
