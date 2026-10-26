@@ -21,7 +21,7 @@ The [ChartControl.CustomDrawSeries](https://docs.devexpress.com/WindowsForms/Dev
 pointColors[e.SeriesPoint] = e.SeriesDrawOptions.Color;
 ```
 
-The [GridView.CustomDrawCell](https://docs.devexpress.com/WindowsForms/DevExpress.XtraGrid.Views.Grid.GridView.CustomDrawCell) event handler calls `GetMarkerColors` and `DrawLegendMarker` methods to custom draw series indicators in the Data Grid.
+The [GridView.CustomDrawCell](https://docs.devexpress.com/WindowsForms/DevExpress.XtraGrid.Views.Grid.GridView.CustomDrawCell) event handler calls `GetMarkerColors` and `DrawLegendMarker` methods to draw series indicators in the Data Grid.
 
 ### Bind the Grid to Chart Series
 
